@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+#== HELPERS ==#
+info() {
+  echo "> $1"
+}
+
+success() {
+    echo -e "\e[00;32m$1\e[m"
+}
+
+error() {
+    echo -e "\e[00;41m$1\e[m"
+    exit
+}
+
+#== ENVIRONMENT ==#
+if [[ $# -eq 0 ]]
+then
+    ENV="dev"
+    NOT_ASK=""
+else
+    ENV="$1"
+    NOT_ASK="$2"
+    if [[ ${NOT_ASK} = "Y" ]] || [[ ${NOT_ASK} = "y" ]] || [[ ${NOT_ASK} = "Yes" ]] || [[ ${NOT_ASK} = "yes" ]]; then NOT_ASK="Y"; fi
+fi
+
+COMP_OPT=""
+SYMFONY_OPT="--env=${ENV}"
+
+if [[ "${ENV}" = "prod" ]]
+then
+    COMP_OPT="--prefer-dist --no-dev"
+    SYMFONY_OPT="${SYMFONY_OPT} --no-debug"
+fi
+
+#== SCRIPTS ==#
+composer_install() {
+    composer install --optimize-autoloader ${COMP_OPT}
+    if [[ $? -ne 0 ]]; then error "Composer install failed, script cannot continue."; fi
+}
+
+#== RUN ==#
+info "First it is recommended to perform a composer run to install all project dependencies."
+if [[ ${NOT_ASK} = "Y" ]]; then install="Y"; else read -p "Perform install project? [Y/N]: " install; fi
+if [[ ${install} = "Y" ]] || [[ ${install} = "y" ]]
+then
+    export APP_ENV=${ENV}
+    composer_install
+fi
+
+if [[ ${ENV} = "dev" ]] || [[ ${ENV} = "test" ]]
+then
+    read -p "Run all code checks? [Y/N]: " code_check
+    if [[ ${code_check} = "Y" ]] || [[ ${code_check} = "y" ]]
+    then
+        vendor/bin/php-cs-fixer fix --config=.php_cs.dist -v --dry-run --using-cache=no
+        read -p "Apply PHP CS Fixer? [Y/N]: " cs_fixer
+        if [[ ${cs_fixer} = "Y" ]] || [[ ${cs_fixer} = "y" ]]
+        then
+            vendor/bin/php-cs-fixer fix --config=.php_cs.dist -v --using-cache=no
+        fi
+
+        vendor/bin/simple-phpunit install
+        vendor/bin/phpstan analyse -c phpstan.neon -l max src tests
+        read -p "Do PHP Mess Detector? [Y/N]: " phpmd
+        if [[ ${phpmd} = "Y" ]] || [[ ${phpmd} = "y" ]]
+        then
+            vendor/bin/phpmd src,tests text phpmd.xml
+        fi
+
+        read -p "Run PHPUnit Tests? [Y/N]: " phpunit
+        if [[ ${phpunit} = "Y" ]] || [[ ${phpunit} = "y" ]]
+        then
+            vendor/bin/simple-phpunit --coverage-text --colors=never
+        fi
+    fi
+fi
+
+exit

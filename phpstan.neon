@@ -1,0 +1,16 @@
+includes:
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+    # PHPUnit
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+    #Symfony
+    - vendor/phpstan/phpstan-symfony/extension.neon
+
+parameters:
+	checkMissingIterableValueType: false
+	checkGenericClassInNonGenericObjectType: false
+	symfony:
+		container_xml_path: %currentWorkingDirectory%/var/cache/dev/App_KernelDevDebugContainer.xml
+	# if using simple-phpunit need to autoload, don't forget to run `vendor/bin/simple-phpunit install` in CI scripts
+	bootstrapFiles:
+	    - vendor/bin/.phpunit/phpunit-8.5-0/vendor/autoload.php
