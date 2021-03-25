@@ -24,3 +24,8 @@
 /.php_cs
 /.php_cs.cache
 ###< friendsofphp/php-cs-fixer ###
+
+###> docker ###
+/docker-compose.override.*
+/.docker/.mysql-data/
+###< docker ###
