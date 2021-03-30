@@ -7,10 +7,12 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 
-class DefaultController extends AbstractController
+class DefaultAction extends AbstractController
 {
-    public function index(): Response
+    public function __invoke(): Response
     {
-        return $this->render('base.html.twig');
+        return new Response(
+            $this->renderView('base.html.twig')
+        );
     }
 }
